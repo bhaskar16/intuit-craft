@@ -1,6 +1,5 @@
 package com.qbot.controllers;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,19 +39,22 @@ public class TaskController {
 
     @GetMapping(path = "/schedule")
     public List<TaskDTO> schedule() {
-        return convertTaskToDTO(taskService.scheduleTasks());
+        return taskService.scheduleTasks()
+          .stream()
+          .map(this::convertTaskToDTO)
+          .toList();
     }
 
-    private List<TaskDTO> convertTaskToDTO(List<Task> tasks) {
-        List<TaskDTO> dtos = new ArrayList<>();
+    @PutMapping(path = "/dependency")
+    public boolean addDependency(Integer existingTaskId, Integer newTaskId) {
+        return taskService.addDependency(existingTaskId, newTaskId);
 
-        for (Task task : tasks) {
-            TaskDTO taskDTO = new TaskDTO();
-            taskDTO.setDescription(task.getDescription());
-            taskDTO.setDueDate(task.getDueBy());
-            dtos.add(taskDTO);
-        }
+    }
 
-        return dtos;
+    private TaskDTO convertTaskToDTO(Task task) {
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setDescription(task.getDescription());
+        taskDTO.setDueDate(task.getDueBy());
+        return taskDTO;
     }
 }

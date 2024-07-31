@@ -5,19 +5,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
-public class Task implements Comparable<Task>{
+public class Task implements Comparable<Task> {
 
-    private long id;
+    private int id;
 
     private String description;
 
     private Collection<Task> dependencies;
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -68,14 +68,18 @@ public class Task implements Comparable<Task>{
         this.dependencies.add(dependency);
     }
 
+    public boolean validateDepency(Task dependecy) {
+        return false;
+    }
+
     @Override
     public String toString() {
-//        return "Task{" + "description='" + description + '\'' + ", dependencies=" + dependencies + '}';
+        //        return "Task{" + "description='" + description + '\'' + ", dependencies=" + dependencies + '}';
         return "Task " + id;
     }
 
     @Override
     public int compareTo(Task o) {
-        return (int) (this.id - o.id);
+        return this.id - o.id;
     }
 }
