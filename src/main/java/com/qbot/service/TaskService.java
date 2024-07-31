@@ -1,6 +1,7 @@
 package com.qbot.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,12 +36,16 @@ public class TaskService {
         return task;
     }
 
+    public List<Task> getMyInMemoryTasks() {
+        return Collections.unmodifiableList(myTasks);
+    }
+
     public List<Task> getDefaultTasks() {
         return (List<Task>) taskGenerationUtil.generateTasks();
     }
 
     public Optional<Task> getTaskById(Integer id) {
-        return taskGenerationUtil.generateTasks()
+        return myTasks
           .stream()
           .filter(task -> task.getId() == id)
           .findFirst();
@@ -48,10 +53,12 @@ public class TaskService {
 
     public boolean addDependency(Integer baseTask, Integer dependentTask) {
         Optional<Task> existingTask = getTaskById(baseTask);
-        List<Task> allTasks = (List<Task>) taskGenerationUtil.generateTasks();
+
         Optional<Task> newTask = getTaskById(dependentTask);
         validatorContext.setValidatorContext(new DepthFirstDependencyValidatorImpl());
-        if (validatorContext.isValid(allTasks, newTask.get())) {
+
+        List<Task> clonedTasks = new ArrayList<>(myTasks);
+        if (validatorContext.isValid(clonedTasks)) {
             existingTask.get()
               .addDependency(newTask.get());
             return true;
@@ -61,6 +68,6 @@ public class TaskService {
 
     public List<Task> scheduleTasks() throws TaskOrderingException, NoTasksException {
 
-        return schedulable.scheduleTasks(taskOrderContext, (List<Task>) taskGenerationUtil.generateTasks());
+        return schedulable.scheduleTasks(taskOrderContext, myTasks);
     }
 }

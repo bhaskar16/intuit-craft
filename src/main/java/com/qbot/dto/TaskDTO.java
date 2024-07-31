@@ -3,15 +3,34 @@ package com.qbot.dto;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-
-import org.hibernate.validator.constraints.NotBlank;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TaskDTO {
 
     public static final String DATE_PATTERN = "yyyy-MM-dd:HH:mm:ss";
 
-    @NotBlank(message = "Description is mandatory")
     private String description;
+
+    private int id;
+
+    public List<Integer> getDependecies() {
+        return dependecies;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setDependecies(List<Integer> dependecies) {
+        this.dependecies = dependecies;
+    }
+
+    private List<Integer> dependecies = new ArrayList<>();
+
+    public int getId() {
+        return id;
+    }
 
     private LocalDateTime dueDate;
 

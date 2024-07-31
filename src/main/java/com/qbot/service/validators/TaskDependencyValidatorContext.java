@@ -11,7 +11,7 @@ public class TaskDependencyValidatorContext {
         this.validatorContext = context;
     }
 
-    public boolean isValid(List<Task> existingTasks, Task newTask) {
-        return this.validatorContext.validDependency(existingTasks, newTask);
+    public boolean isValid(List<Task> updatedTasks) {
+        return this.validatorContext.validDependency(updatedTasks);
     }
 }

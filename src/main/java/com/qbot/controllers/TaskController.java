@@ -1,6 +1,8 @@
 package com.qbot.controllers;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,7 +33,7 @@ public class TaskController {
 
     @GetMapping
     public List<TaskDTO> getAllTasks() {
-        return taskService.getDefaultTasks()
+        return taskService.getMyInMemoryTasks()
           .stream()
           .map(this::convertTaskToDTO)
           .toList();
@@ -44,17 +46,22 @@ public class TaskController {
     }
 
     @GetMapping(path = "/schedule")
-    public ResponseEntity<List<TaskDTO>> schedule() throws TaskOrderingException, NoTasksException {
-        List<TaskDTO> scheduledTasks = taskService.scheduleTasks()
-          .stream()
-          .map(this::convertTaskToDTO)
-          .toList();
+    public ResponseEntity<List<TaskDTO>> schedule() {
+        List<TaskDTO> scheduledTasks = null;
+        try {
+            scheduledTasks = taskService.scheduleTasks()
+              .stream()
+              .map(this::convertTaskToDTO)
+              .toList();
+        } catch (TaskOrderingException | NoTasksException e) {
+            return new ResponseEntity<>(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
         return new ResponseEntity<>(scheduledTasks, HttpStatus.OK);
     }
 
     @PostMapping("/{existingTaskId}/dependencies/{newTaskId}")
     public ResponseEntity addDependency(@PathVariable Integer existingTaskId, @PathVariable Integer newTaskId) {
-        Boolean possibleToAdd = taskService.addDependency(existingTaskId, newTaskId);
+        boolean possibleToAdd = taskService.addDependency(existingTaskId, newTaskId);
         return possibleToAdd ? new ResponseEntity<>(HttpStatus.CREATED) : new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
 
     }
@@ -63,6 +70,11 @@ public class TaskController {
         TaskDTO taskDTO = new TaskDTO();
         taskDTO.setDescription(task.getDescription());
         taskDTO.setDueDate(task.getDueBy());
+        taskDTO.setId(task.getId());
+        for (Task dep : task.getDependencies()) {
+            taskDTO.getDependecies()
+              .add(dep.getId());
+        }
         return taskDTO;
     }
 }

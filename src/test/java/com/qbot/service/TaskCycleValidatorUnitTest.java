@@ -33,7 +33,8 @@ public class TaskCycleValidatorUnitTest {
         newTask.setId(7);
         newTask.setDescription("T7");
         newTask.addDependency(myTasks.get(0));
-        assertTrue(context.isValid(myTasks, newTask));
+
+        assertTrue(context.isValid(myTasks));
     }
 
     @Test
@@ -42,6 +43,6 @@ public class TaskCycleValidatorUnitTest {
 
         Task firstTask = testUtil.findTaskById(myTasks, 5);
         firstTask.addDependency(testUtil.findTaskById(myTasks, 0));
-        assertFalse(context.isValid(myTasks, firstTask));
+        assertFalse(context.isValid(myTasks));
     }
 }
