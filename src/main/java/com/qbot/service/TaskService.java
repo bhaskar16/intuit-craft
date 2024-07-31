@@ -1,0 +1,53 @@
+package com.qbot.service;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
+import com.qbot.entities.Task;
+import com.qbot.service.ordering.TaskOrderContext;
+import com.qbot.service.scheduler.DependencyOrdererScheduler;
+import com.qbot.service.scheduler.Schedulable;
+import com.qbot.service.validators.TaskDependencyValidatorContext;
+import com.qbot.utility.TaskGenerationUtil;
+import com.qbot.utility.exceptions.NoTasksException;
+import com.qbot.utility.exceptions.TaskOrderingException;
+
+@Service
+public class TaskService {
+
+    private final TaskGenerationUtil taskGenerationUtil = new TaskGenerationUtil();
+    private final TaskOrderContext taskOrderContext = new TaskOrderContext();
+    private final TaskDependencyValidatorContext validatorContext = new TaskDependencyValidatorContext();
+    private final Schedulable schedulable = new DependencyOrdererScheduler();
+
+    public List<Task> getDefaultTasks() {
+        return (List<Task>) taskGenerationUtil.generateTasks();
+    }
+
+    public Optional<Task> getTaskById(Integer id) {
+        return taskGenerationUtil.generateTasks()
+          .stream()
+          .filter(task -> task.getId() == id)
+          .findFirst();
+    }
+
+    public boolean addDependency(Integer baseTask, Integer dependentTask) {
+        Optional<Task> existingTask = getTaskById(baseTask);
+        List<Task> allTasks = (List<Task>) taskGenerationUtil.generateTasks();
+        Optional<Task> newTask = getTaskById(dependentTask);
+
+        if (validatorContext.isValid(allTasks, newTask.get())) {
+            existingTask.get()
+              .addDependency(newTask.get());
+            return true;
+        }
+        return false;
+    }
+
+    public List<Task> scheduleTasks() throws TaskOrderingException, NoTasksException {
+
+        return schedulable.scheduleTasks(taskOrderContext, (List<Task>) taskGenerationUtil.generateTasks());
+    }
+}
