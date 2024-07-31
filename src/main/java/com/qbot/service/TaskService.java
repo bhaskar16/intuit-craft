@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service;
 
 import com.qbot.entities.Task;
 import com.qbot.service.ordering.TaskOrderContext;
-import com.qbot.service.ordering.TopologicalOrdering;
+import com.qbot.service.scheduler.DependencyOrdererScheduler;
+import com.qbot.service.scheduler.Schedulable;
 import com.qbot.service.validators.TaskDependencyValidatorContext;
 import com.qbot.utility.TaskGenerationUtil;
+import com.qbot.utility.exceptions.NoTasksException;
 import com.qbot.utility.exceptions.TaskOrderingException;
 
 @Service
@@ -18,6 +20,7 @@ public class TaskService {
     private final TaskGenerationUtil taskGenerationUtil = new TaskGenerationUtil();
     private final TaskOrderContext taskOrderContext = new TaskOrderContext();
     private final TaskDependencyValidatorContext validatorContext = new TaskDependencyValidatorContext();
+    private final Schedulable schedulable = new DependencyOrdererScheduler();
 
     public List<Task> getDefaultTasks() {
         return (List<Task>) taskGenerationUtil.generateTasks();
@@ -43,14 +46,8 @@ public class TaskService {
         return false;
     }
 
-    public List<Task> scheduleTasks() {
-        List<Task> ordered;
-        taskOrderContext.setOrderingStrategy(new TopologicalOrdering());
-        try {
-            ordered = taskOrderContext.order((List<Task>) taskGenerationUtil.generateTasks());
-        } catch (TaskOrderingException e) {
-            throw new RuntimeException(e);
-        }
-        return ordered;
+    public List<Task> scheduleTasks() throws TaskOrderingException, NoTasksException {
+
+        return schedulable.scheduleTasks(taskOrderContext, (List<Task>) taskGenerationUtil.generateTasks());
     }
 }

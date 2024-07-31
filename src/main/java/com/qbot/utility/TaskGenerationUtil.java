@@ -19,7 +19,7 @@ public class TaskGenerationUtil {
         return tasks;
     }
 
-    private static Task getTask(int i) {
+    private Task getTask(int i) {
         Task t = new Task();
         t.setId(i);
         t.setDescription("T" + (i));
@@ -57,6 +57,22 @@ public class TaskGenerationUtil {
 
         tasks.get(1)
           .addDependency(tasks.get(0));
+    }
+
+    public void addCyclicDependencies(List<Task> tasks) {
+        tasks.get(5)
+          .addDependency(tasks.get(2));
+        tasks.get(5)
+          .addDependency(tasks.get(0));
+        tasks.get(4)
+          .addDependency(tasks.get(1));
+        tasks.get(2)
+          .addDependency(tasks.get(3));
+        tasks.get(3)
+          .addDependency(tasks.get(1));
+
+        tasks.get(2)
+          .addDependency(tasks.get(5));
     }
 
 }

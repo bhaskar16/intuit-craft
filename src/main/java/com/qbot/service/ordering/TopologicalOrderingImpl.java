@@ -5,14 +5,47 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.qbot.entities.Task;
+import com.qbot.utility.exceptions.NoTasksException;
 import com.qbot.utility.exceptions.TaskOrderingException;
 
-public class TopologicalOrdering implements TaskOrderable {
+/**
+ * This is a specific Task ordering implementation that performs Topological Ordering of the Tasks.
+ * This method throws NoTasksException when there are no tasks to order.
+ * This method throws TaskOrderingException when the algorithm is unable to order the tasks(possibly due to the presence of a cycle).
+ */
+public class TopologicalOrderingImpl implements TaskOrderable {
 
-    public List<Task> orderTasks(final List<Task> tasks) throws TaskOrderingException {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TopologicalOrderingImpl.class);
+
+    /**
+     * Returns a completely new list with the new order of Tasks.
+     *
+     * Steps :
+     *  - Start
+     *  - Generates the prerequisites for each task
+     *  - Understands which tasks have no pre-requisite (therefore, in-degree = 0 in the context of a DAG)
+     *  - Performs ordering starting with those nodes and gradually decreases the in-degrees of other adjacent nodes
+     *  - Returns final order
+     *  - End
+     * @param tasks
+     * @return
+     * @throws TaskOrderingException
+     * @throws NoTasksException
+     */
+    public List<Task> orderTasks(final List<Task> tasks) throws TaskOrderingException, NoTasksException {
+
+        if (Objects.isNull(tasks)) {
+            LOGGER.error("No tasks were present");
+            throw new NoTasksException("No tasks were present. Ordering activity cancelled");
+        }
+
         Map<Task, List<Task>> preRequisites = generatePrerequisites(tasks);
         Map<Task, Integer> indegrees = generateIndegrees(tasks);
 
@@ -33,7 +66,11 @@ public class TopologicalOrdering implements TaskOrderable {
                 }
             }
         }
+
+        LOGGER.info("Seeded Independent Tasks : {}", independentTasks);
+
         if (tasksAccounted != tasks.size()) {
+            LOGGER.error("Cycle detected!!");
             throw new TaskOrderingException("It is not possible to order all the tasks based on the individual dependencies");
         }
         return orderedTasks;

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.qbot.dto.TaskDTO;
 import com.qbot.entities.Task;
 import com.qbot.service.TaskService;
+import com.qbot.utility.exceptions.NoTasksException;
+import com.qbot.utility.exceptions.TaskOrderingException;
 
 @RestController
 @RequestMapping("/tasks")
@@ -38,7 +40,7 @@ public class TaskController {
     }
 
     @GetMapping(path = "/schedule")
-    public List<TaskDTO> schedule() {
+    public List<TaskDTO> schedule() throws TaskOrderingException, NoTasksException {
         return taskService.scheduleTasks()
           .stream()
           .map(this::convertTaskToDTO)
