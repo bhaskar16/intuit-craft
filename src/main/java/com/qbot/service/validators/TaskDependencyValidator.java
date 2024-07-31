@@ -12,5 +12,5 @@ import com.qbot.entities.Task;
  *  - false if the dependency is not allowed
  */
 public interface TaskDependencyValidator extends Validator {
-    boolean validDependency(List<Task> tasks, Task dependency);
+    boolean validDependency(List<Task> tasks);
 }

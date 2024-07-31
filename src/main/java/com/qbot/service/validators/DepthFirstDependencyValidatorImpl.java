@@ -2,8 +2,10 @@ package com.qbot.service.validators;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,83 +14,70 @@ import com.qbot.entities.Task;
 
 public class DepthFirstDependencyValidatorImpl implements TaskDependencyValidator {
 
-    Map<Integer, List<Integer>> graph = new HashMap<>();
-    public static final int TOTAL_VERTICES_UPPER_BOUND = 1_000;
     private static final Logger LOGGER = LoggerFactory.getLogger(DepthFirstDependencyValidatorImpl.class);
 
-    int vertices = 0;
-    boolean[] visited;
-    boolean[] recursiveStack;
-
     @Override
-    public boolean validDependency(final List<Task> tasks, Task dependency) {
-        LOGGER.info("New Dependency evaluation phase {}", dependency.getDescription());
+    public boolean validDependency(final List<Task> tasks) {
+        Map<Task, List<Task>> preRequisites = generatePrerequisites(tasks);
+        Map<Task, Integer> indegrees = generateIndegrees(tasks);
 
-        List<Task> updatedTasks = new ArrayList<>(tasks);
-        updatedTasks.add(dependency);
+        int tasksAccounted = 0;
 
-        vertices = updatedTasks.size();
-        LOGGER.info("Total Number of Vertices {}", vertices);
+        Queue<Task> independentTasks = seedIndependantTasksFromIndegrees(indegrees, tasks);
 
-        generateGraph(updatedTasks);
-        return !isCyclic();
-
-    }
-
-    /**
-     * Tries to generate a DAG with Adjacency list(in Map)
-     * @param tasks list
-     */
-    private void generateGraph(final List<Task> tasks) {
-        for (Task task : tasks) {
-            graph.put(task.getId(), new ArrayList<>());
-        }
-
-        for (Task task : tasks) {
-            for (Task existingDependent : task.getDependencies()) {
-                graph.get(existingDependent.getId())
-                  .add(task.getId());
+        while (!independentTasks.isEmpty()) {
+            Task top = independentTasks.poll();
+            tasksAccounted += 1;
+            for (Task dependent : preRequisites.get(top)) {
+                indegrees.put(dependent, indegrees.get(dependent) - 1);
+                if (indegrees.get(dependent) == 0) {
+                    independentTasks.offer(dependent);
+                }
             }
         }
-    }
 
-    /**
-     * Performs Depth First Search with a visited array and another array
-     * to maintain the stack recursive calls.
-     * @return true/false
-     */
-
-    private boolean isCyclic() {
-        visited = new boolean[TOTAL_VERTICES_UPPER_BOUND];
-        recursiveStack = new boolean[TOTAL_VERTICES_UPPER_BOUND];
-        for (int i : graph.keySet()) {
-            if (isCyclicUtility(i, visited, recursiveStack)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isCyclicUtility(int index, boolean[] visited, boolean[] recursiveStack) {
-        if (recursiveStack[index]) {
-            return true;
-        }
-
-        if (visited[index]) {
+        if (tasksAccounted != tasks.size()) {
+            LOGGER.error("Cycle detected!!");
             return false;
         }
+        return true;
+    }
 
-        visited[index] = true;
-        recursiveStack[index] = true;
+    private Map<Task, List<Task>> generatePrerequisites(List<Task> tasks) {
+        Map<Task, List<Task>> preRequisites = new HashMap<>();
+        for (Task task : tasks) {
+            preRequisites.put(task, new ArrayList<>());
+        }
 
-        List<Integer> associated = graph.get(index);
+        for (Task task : tasks) {
+            for (Task dep : task.getDependencies()) {
+                preRequisites.get(task)
+                  .add(dep);
+            }
+        }
+        return preRequisites;
+    }
 
-        for (Integer c : associated)
-            if (isCyclicUtility(c, visited, recursiveStack))
-                return true;
+    private Map<Task, Integer> generateIndegrees(List<Task> tasks) {
+        Map<Task, Integer> indegrees = new HashMap<>();
+        for (Task t : tasks) {
+            indegrees.put(t, 0);
+        }
+        for (Task task : tasks) {
+            for (Task dep : task.getDependencies()) {
+                indegrees.put(dep, indegrees.get(dep) + 1);
+            }
+        }
+        return indegrees;
+    }
 
-        recursiveStack[index] = false;
-        return false;
-
+    private Queue<Task> seedIndependantTasksFromIndegrees(Map<Task, Integer> indegrees, List<Task> tasks) {
+        Queue<Task> independents = new LinkedList<>();
+        for (Task task : tasks) {
+            if (indegrees.get(task) == 0) {
+                independents.offer(task);
+            }
+        }
+        return independents;
     }
 }
