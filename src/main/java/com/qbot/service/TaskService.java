@@ -15,6 +15,7 @@ import com.qbot.service.scheduler.Schedulable;
 import com.qbot.service.validators.DepthFirstDependencyValidatorImpl;
 import com.qbot.service.validators.TaskDependencyValidatorContext;
 import com.qbot.utility.TaskGenerationUtil;
+import com.qbot.utility.exceptions.NoSuchTaskException;
 import com.qbot.utility.exceptions.NoTasksException;
 import com.qbot.utility.exceptions.TaskOrderingException;
 
@@ -44,25 +45,34 @@ public class TaskService {
         return (List<Task>) taskGenerationUtil.generateTasks();
     }
 
-    public Optional<Task> getTaskById(Integer id) {
-        return myTasks
-          .stream()
+    public Optional<Task> getTaskById(List<Task> tasks, Integer id) {
+        return tasks.stream()
           .filter(task -> task.getId() == id)
           .findFirst();
     }
 
-    public boolean addDependency(Integer baseTask, Integer dependentTask) {
-        Optional<Task> existingTask = getTaskById(baseTask);
+    public boolean addDependency(Integer baseTask, Integer dependentTask) throws NoSuchTaskException {
 
-        Optional<Task> newTask = getTaskById(dependentTask);
         validatorContext.setValidatorContext(new DepthFirstDependencyValidatorImpl());
 
-        List<Task> clonedTasks = new ArrayList<>(myTasks);
-        if (validatorContext.isValid(clonedTasks)) {
-            existingTask.get()
-              .addDependency(newTask.get());
+        Optional<Task> existingTask = getTaskById(myTasks, baseTask);
+        Optional<Task> newTask = getTaskById(myTasks, dependentTask);
+        if (existingTask.isEmpty() || newTask.isEmpty()) {
+            throw new NoSuchTaskException("No Task found, please check the ids");
+        }
+        if (existingTask.get()
+          .getDependencies()
+          .contains(newTask.get())) {
             return true;
         }
+        existingTask.get()
+          .addDependency(newTask.get());
+
+        if (validatorContext.isValid(myTasks)) {
+            return true;
+        }
+        existingTask.get()
+          .removeDependency(newTask.get());
         return false;
     }
 

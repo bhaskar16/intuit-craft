@@ -7,11 +7,6 @@ import java.util.Objects;
 
 import com.qbot.utility.IDGenerator;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
 public class Task implements Comparable<Task> {
 
     private int id;
@@ -34,7 +29,8 @@ public class Task implements Comparable<Task> {
 
     public Task() {
         this.dependencies = new ArrayList<>();
-        this.id = IDGenerator.getInstance().getNextId();
+        this.id = IDGenerator.getInstance()
+          .getNextId();
     }
 
     public String getDescription() {
@@ -74,6 +70,10 @@ public class Task implements Comparable<Task> {
             this.dependencies = new ArrayList<>();
         }
         this.dependencies.add(dependency);
+    }
+
+    public void removeDependency(Task dependency) {
+        this.dependencies.remove(dependency);
     }
 
     public boolean validateDepency(Task dependecy) {

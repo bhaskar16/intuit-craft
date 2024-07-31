@@ -1,8 +1,6 @@
 package com.qbot.controllers;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.qbot.dto.TaskDTO;
 import com.qbot.entities.Task;
 import com.qbot.service.TaskService;
+import com.qbot.utility.exceptions.NoSuchTaskException;
 import com.qbot.utility.exceptions.NoTasksException;
 import com.qbot.utility.exceptions.TaskOrderingException;
 
@@ -61,7 +60,12 @@ public class TaskController {
 
     @PostMapping("/{existingTaskId}/dependencies/{newTaskId}")
     public ResponseEntity addDependency(@PathVariable Integer existingTaskId, @PathVariable Integer newTaskId) {
-        boolean possibleToAdd = taskService.addDependency(existingTaskId, newTaskId);
+        boolean possibleToAdd = false;
+        try {
+            possibleToAdd = taskService.addDependency(existingTaskId, newTaskId);
+        } catch (NoSuchTaskException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         return possibleToAdd ? new ResponseEntity<>(HttpStatus.CREATED) : new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
 
     }
