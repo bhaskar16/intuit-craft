@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,26 +30,32 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> getAllTasks() {
-        return taskService.getDefaultTasks();
-    }
-
-    @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        return new ResponseEntity<>(task, HttpStatus.CREATED);
-    }
-
-    @GetMapping(path = "/schedule")
-    public List<TaskDTO> schedule() throws TaskOrderingException, NoTasksException {
-        return taskService.scheduleTasks()
+    public List<TaskDTO> getAllTasks() {
+        return taskService.getDefaultTasks()
           .stream()
           .map(this::convertTaskToDTO)
           .toList();
     }
 
-    @PutMapping(path = "/dependency")
-    public boolean addDependency(Integer existingTaskId, Integer newTaskId) {
-        return taskService.addDependency(existingTaskId, newTaskId);
+    @PostMapping
+    public ResponseEntity<TaskDTO> createTask(@RequestBody TaskDTO task) {
+        Task createdTask = taskService.createNewTask(task);
+        return new ResponseEntity<>(convertTaskToDTO(createdTask), HttpStatus.CREATED);
+    }
+
+    @GetMapping(path = "/schedule")
+    public ResponseEntity<List<TaskDTO>> schedule() throws TaskOrderingException, NoTasksException {
+        List<TaskDTO> scheduledTasks = taskService.scheduleTasks()
+          .stream()
+          .map(this::convertTaskToDTO)
+          .toList();
+        return new ResponseEntity<>(scheduledTasks, HttpStatus.OK);
+    }
+
+    @PostMapping("/{existingTaskId}/dependencies/{newTaskId}")
+    public ResponseEntity addDependency(@PathVariable Integer existingTaskId, @PathVariable Integer newTaskId) {
+        Boolean possibleToAdd = taskService.addDependency(existingTaskId, newTaskId);
+        return possibleToAdd ? new ResponseEntity<>(HttpStatus.CREATED) : new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
 
     }
 
