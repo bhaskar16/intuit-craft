@@ -16,11 +16,6 @@ public class DepthFirstDependencyValidatorImpl implements TaskDependencyValidato
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DepthFirstDependencyValidatorImpl.class);
 
-    /**
-     * Tries to generate a DAG with Adjacency list(in Map). Performs Topological Sort using Kahns Algorithm
-     * @param tasks list
-     */
-
     @Override
     public boolean validDependency(final List<Task> tasks) {
         Map<Task, List<Task>> preRequisites = generatePrerequisites(tasks);
@@ -56,8 +51,8 @@ public class DepthFirstDependencyValidatorImpl implements TaskDependencyValidato
 
         for (Task task : tasks) {
             for (Task dep : task.getDependencies()) {
-                preRequisites.get(dep)
-                  .add(task);
+                preRequisites.get(task)
+                  .add(dep);
             }
         }
         return preRequisites;
@@ -69,9 +64,8 @@ public class DepthFirstDependencyValidatorImpl implements TaskDependencyValidato
             indegrees.put(t, 0);
         }
         for (Task task : tasks) {
-            List<Task> dependents = (List<Task>) task.getDependencies();
-            if (!dependents.isEmpty()) {
-                indegrees.put(task, indegrees.get(task) + 1);
+            for (Task dep : task.getDependencies()) {
+                indegrees.put(dep, indegrees.get(dep) + 1);
             }
         }
         return indegrees;
